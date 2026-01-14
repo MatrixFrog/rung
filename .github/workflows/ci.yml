@@ -2,6 +2,7 @@ name: Rung CI
 
 on:
   push:
+    branches: [main]
     paths-ignore:
       - "**.md"
       - "LICENSE"
