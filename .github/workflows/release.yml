@@ -123,25 +123,21 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Publish rung-git
-        run: cargo publish -p rung-git --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        continue-on-error: true
-
-      - name: Wait for crates.io index update
-        run: sleep 30
+        run: cargo publish -p rung-git
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Publish rung-core
-        run: cargo publish -p rung-core --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        continue-on-error: true
-
-      - name: Wait for crates.io index update
-        run: sleep 30
+        run: cargo publish -p rung-core
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Publish rung-github
-        run: cargo publish -p rung-github --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        continue-on-error: true
-
-      - name: Wait for crates.io index update
-        run: sleep 30
+        run: cargo publish -p rung-github
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
       - name: Publish rung-cli
-        run: cargo publish -p rung-cli --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish -p rung-cli
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
