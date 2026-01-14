@@ -35,6 +35,8 @@ curl -fsSL https://github.com/auswm85/rung/releases/latest/download/rung-$(curl 
 sudo mv rung /usr/local/bin/
 ```
 
+**Linux (ARM64):** Build from source with `cargo install rung-cli`.
+
 **Windows:** Download the `.zip` from [releases](https://github.com/auswm85/rung/releases) and add to your PATH.
 
 ### From crates.io
