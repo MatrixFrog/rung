@@ -10,6 +10,10 @@ readme = "README.md"
 keywords = ["git", "git2", "vcs"]
 categories = ["development-tools"]
 
+[features]
+default = []
+vendored-openssl = ["git2/vendored-libgit2", "git2/vendored-openssl"]
+
 [dependencies]
 git2 = { workspace = true }
 thiserror = { workspace = true }

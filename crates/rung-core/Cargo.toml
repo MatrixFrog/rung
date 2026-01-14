@@ -10,6 +10,10 @@ readme = "README.md"
 keywords = ["git", "stacked-prs", "workflow"]
 categories = ["development-tools"]
 
+[features]
+default = []
+vendored-openssl = ["rung-git/vendored-openssl"]
+
 [dependencies]
 rung-git = { workspace = true }
 

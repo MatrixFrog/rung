@@ -22,6 +22,10 @@ pkg-fmt = "zip"
 name = "rung"
 path = "src/main.rs"
 
+[features]
+default = []
+vendored-openssl = ["rung-core/vendored-openssl", "rung-git/vendored-openssl"]
+
 [dependencies]
 rung-core = { workspace = true }
 rung-git = { workspace = true }

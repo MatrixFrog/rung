@@ -49,7 +49,7 @@ jobs:
             artifact: rung
             archive: tar.gz
 
-          # macOS (ARM native, Intel cross-compiled)
+          # macOS
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact: rung
@@ -58,6 +58,7 @@ jobs:
             target: x86_64-apple-darwin
             artifact: rung
             archive: tar.gz
+            cross: true
 
           # Windows
           - os: windows-latest
@@ -84,8 +85,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.target }}-cargo-release-
 
-      - name: Build release binary
+      - name: Build release binary (native)
+        if: ${{ !matrix.cross }}
         run: cargo build --release --target ${{ matrix.target }} -p rung-cli
+
+      - name: Build release binary (cross-compile with vendored OpenSSL)
+        if: ${{ matrix.cross }}
+        run: cargo build --release --target ${{ matrix.target }} -p rung-cli --features vendored-openssl
 
       - name: Create archive (Unix)
         if: matrix.archive == 'tar.gz'
