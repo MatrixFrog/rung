@@ -144,8 +144,11 @@ export async function openPRCommand(
       // SSH format: git@github.com:user/repo.git
       const path = remoteUrl.replace("git@github.com:", "").replace(".git", "");
       baseUrl = `https://github.com/${path}`;
-    } else if (remoteUrl.includes("github.com")) {
-      // HTTPS format
+    } else if (
+      remoteUrl.startsWith("https://github.com/") ||
+      remoteUrl.startsWith("http://github.com/")
+    ) {
+      // HTTPS format - validate hostname explicitly to prevent URL injection
       baseUrl = remoteUrl.replace(".git", "");
     } else {
       void vscode.window.showErrorMessage(
