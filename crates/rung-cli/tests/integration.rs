@@ -2,7 +2,7 @@
 //!
 //! These tests verify the CLI commands work correctly end-to-end.
 
-#![allow(clippy::expect_used, clippy::unwrap_used, deprecated)]
+#![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use assert_cmd::Command;
 use predicates::prelude::*;
@@ -60,7 +60,7 @@ fn setup_git_repo() -> TempDir {
 
 /// Helper to get rung command.
 fn rung() -> Command {
-    Command::cargo_bin("rung").expect("Failed to find rung binary")
+    Command::new(env!("CARGO_BIN_EXE_rung"))
 }
 
 // ============================================================================
