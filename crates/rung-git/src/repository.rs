@@ -327,6 +327,81 @@ impl Repository {
         Err(Error::RebaseFailed(stderr.to_string()))
     }
 
+    // === Remote operations ===
+
+    /// Get the URL of the origin remote.
+    ///
+    /// # Errors
+    /// Returns error if origin remote is not found.
+    pub fn origin_url(&self) -> Result<String> {
+        let remote = self
+            .inner
+            .find_remote("origin")
+            .map_err(|_| Error::RemoteNotFound("origin".into()))?;
+
+        remote
+            .url()
+            .map(String::from)
+            .ok_or_else(|| Error::RemoteNotFound("origin".into()))
+    }
+
+    /// Parse owner and repo name from a GitHub URL.
+    ///
+    /// Supports both HTTPS and SSH URLs:
+    /// - `https://github.com/owner/repo.git`
+    /// - `git@github.com:owner/repo.git`
+    ///
+    /// # Errors
+    /// Returns error if URL cannot be parsed.
+    pub fn parse_github_remote(url: &str) -> Result<(String, String)> {
+        // SSH format: git@github.com:owner/repo.git
+        if let Some(rest) = url.strip_prefix("git@github.com:") {
+            let path = rest.strip_suffix(".git").unwrap_or(rest);
+            if let Some((owner, repo)) = path.split_once('/') {
+                return Ok((owner.to_string(), repo.to_string()));
+            }
+        }
+
+        // HTTPS format: https://github.com/owner/repo.git
+        if let Some(rest) = url
+            .strip_prefix("https://github.com/")
+            .or_else(|| url.strip_prefix("http://github.com/"))
+        {
+            let path = rest.strip_suffix(".git").unwrap_or(rest);
+            if let Some((owner, repo)) = path.split_once('/') {
+                return Ok((owner.to_string(), repo.to_string()));
+            }
+        }
+
+        Err(Error::InvalidRemoteUrl(url.to_string()))
+    }
+
+    /// Push a branch to the remote.
+    ///
+    /// # Errors
+    /// Returns error if push fails.
+    pub fn push(&self, branch: &str, force: bool) -> Result<()> {
+        let workdir = self.workdir().ok_or(Error::NotARepository)?;
+
+        let mut args = vec!["push", "-u", "origin", branch];
+        if force {
+            args.insert(1, "--force-with-lease");
+        }
+
+        let output = std::process::Command::new("git")
+            .args(&args)
+            .current_dir(workdir)
+            .output()
+            .map_err(|e| Error::PushFailed(e.to_string()))?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            Err(Error::PushFailed(stderr.to_string()))
+        }
+    }
+
     // === Low-level access ===
 
     /// Get a reference to the underlying git2 repository.

@@ -70,6 +70,10 @@ pub enum Commands {
         /// Abort the current sync and restore from backup.
         #[arg(long)]
         abort: bool,
+
+        /// Base branch to sync against (defaults to "main").
+        #[arg(long, short)]
+        base: Option<String>,
     },
 
     /// Push branches and create/update PRs.

@@ -11,4 +11,6 @@ mod types;
 pub use auth::Auth;
 pub use client::GitHubClient;
 pub use error::{Error, Result};
-pub use types::{CheckRun, CheckStatus, PullRequest, PullRequestState};
+pub use types::{
+    CheckRun, CheckStatus, CreatePullRequest, PullRequest, PullRequestState, UpdatePullRequest,
+};

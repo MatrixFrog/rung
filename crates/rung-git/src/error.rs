@@ -34,6 +34,18 @@ pub enum Error {
     #[error("working directory has uncommitted changes")]
     DirtyWorkingDirectory,
 
+    /// Remote not found.
+    #[error("remote not found: {0}")]
+    RemoteNotFound(String),
+
+    /// Invalid remote URL.
+    #[error("invalid remote URL: {0}")]
+    InvalidRemoteUrl(String),
+
+    /// Push failed.
+    #[error("push failed: {0}")]
+    PushFailed(String),
+
     /// Underlying git2 error.
     #[error("git error: {0}")]
     Git2(#[from] git2::Error),

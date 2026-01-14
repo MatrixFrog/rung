@@ -1,13 +1,14 @@
 //! `rung sync` command - Sync the stack by rebasing all branches.
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
+use rung_core::sync::{self, SyncResult};
 use rung_core::State;
 use rung_git::Repository;
 
 use crate::output;
 
 /// Run the sync command.
-pub fn run(dry_run: bool, continue_: bool, abort: bool) -> Result<()> {
+pub fn run(dry_run: bool, continue_: bool, abort: bool, base: Option<&str>) -> Result<()> {
     // Open repository
     let repo = Repository::open_current().context("Not inside a git repository")?;
 
@@ -30,8 +31,7 @@ pub fn run(dry_run: bool, continue_: bool, abort: bool) -> Result<()> {
         if !state.is_sync_in_progress() {
             bail!("No sync in progress to abort");
         }
-        // TODO: Implement abort logic
-        rung_core::sync::abort_sync(&repo, &state)?;
+        sync::abort_sync(&repo, &state)?;
         output::success("Sync aborted - branches restored from backup");
         return Ok(());
     }
@@ -41,10 +41,8 @@ pub fn run(dry_run: bool, continue_: bool, abort: bool) -> Result<()> {
         if !state.is_sync_in_progress() {
             bail!("No sync in progress to continue");
         }
-        // TODO: Implement continue logic
         output::info("Continuing sync...");
-        output::warn("Sync continuation not yet implemented");
-        return Ok(());
+        return handle_sync_result(sync::continue_sync(&repo, &state)?);
     }
 
     // Check for existing sync in progress
@@ -63,20 +61,63 @@ pub fn run(dry_run: bool, continue_: bool, abort: bool) -> Result<()> {
         return Ok(());
     }
 
+    // Determine base branch
+    let base_branch = base.unwrap_or("main");
+
+    // Create sync plan
+    let plan = sync::create_sync_plan(&repo, &stack, base_branch)?;
+
+    if plan.is_empty() {
+        output::success("Stack is already up-to-date");
+        return Ok(());
+    }
+
     if dry_run {
-        output::info("Dry run - would sync the following branches:");
-        for branch in &stack.branches {
-            println!("  → {}", branch.name);
+        output::info("Dry run - would rebase the following branches:");
+        for action in &plan.branches {
+            println!(
+                "  → {} (onto {})",
+                action.branch,
+                &action.new_base[..8.min(action.new_base.len())]
+            );
         }
         return Ok(());
     }
 
-    // TODO: Implement actual sync
-    output::warn("Sync not yet fully implemented");
-    output::info("Would sync branches in order:");
-    for branch in &stack.branches {
-        println!("  → {}", branch.name);
-    }
+    // Execute sync
+    output::info(&format!("Syncing {} branches...", plan.branches.len()));
+    handle_sync_result(sync::execute_sync(&repo, &state, plan)?)
+}
 
+fn handle_sync_result(result: SyncResult) -> Result<()> {
+    match result {
+        SyncResult::AlreadySynced => {
+            output::success("Stack is already up-to-date");
+        }
+        SyncResult::Complete {
+            branches_rebased,
+            backup_id,
+        } => {
+            output::success(&format!(
+                "Synced {} branches (backup: {})",
+                branches_rebased,
+                &backup_id[..8.min(backup_id.len())]
+            ));
+        }
+        SyncResult::Paused {
+            at_branch,
+            conflict_files,
+            ..
+        } => {
+            output::warn(&format!("Conflict in branch '{at_branch}'"));
+            output::info("Conflicting files:");
+            for file in &conflict_files {
+                println!("  → {file}");
+            }
+            println!();
+            output::info("Resolve conflicts, then run: rung sync --continue");
+            output::info("Or abort with: rung sync --abort");
+        }
+    }
     Ok(())
 }
