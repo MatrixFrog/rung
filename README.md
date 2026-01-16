@@ -20,18 +20,21 @@ Rung helps you work with dependent branches by:
 Download the latest release for your platform from [GitHub Releases](https://github.com/auswm85/rung/releases).
 
 **macOS (Apple Silicon):**
+
 ```bash
 curl -fsSL https://github.com/auswm85/rung/releases/latest/download/rung-$(curl -s https://api.github.com/repos/auswm85/rung/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')-aarch64-apple-darwin.tar.gz | tar xz
 sudo mv rung /usr/local/bin/
 ```
 
 **macOS (Intel):**
+
 ```bash
 curl -fsSL https://github.com/auswm85/rung/releases/latest/download/rung-$(curl -s https://api.github.com/repos/auswm85/rung/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')-x86_64-apple-darwin.tar.gz | tar xz
 sudo mv rung /usr/local/bin/
 ```
 
 **Linux (x86_64):**
+
 ```bash
 curl -fsSL https://github.com/auswm85/rung/releases/latest/download/rung-$(curl -s https://api.github.com/repos/auswm85/rung/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')-x86_64-unknown-linux-gnu.tar.gz | tar xz
 sudo mv rung /usr/local/bin/
@@ -85,6 +88,10 @@ rung status
 
 ## Commands
 
+### Global Options
+
+- `--json` - Output as JSON (for tooling integration). Supported by: `status`, `doctor`, `sync`, `submit`, `merge`
+
 ### `rung init`
 
 Initialize rung in the current repository. Creates a `.git/rung/` directory to store stack state.
@@ -114,7 +121,6 @@ rung status --json       # Output as JSON for tooling
 **Options:**
 
 - `--fetch` - Fetch latest PR status from GitHub
-- `--json` - Output as JSON (for tooling integration)
 
 ### `rung sync`
 
