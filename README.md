@@ -311,8 +311,8 @@ cargo build --release
 
 ## Authors
 
-<a href="https://github.com/auswm85">
-  <img src="https://github.com/auswm85.png" width="50" height="50" alt="auswm85" style="border-radius: 50%;">
+<a href="https://github.com/auswm85/rung/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=auswm85/rung" />
 </a>
 
 ## License
