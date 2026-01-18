@@ -3,7 +3,7 @@ language: en-US
 reviews:
   profile: chill
   request_changes_workflow: true
-  high_level_summary: true
+  high_level_summary: false
   high_level_summary_placeholder: "@coderabbitai summary"
   auto_title_placeholder: "@coderabbitai"
   review_status: true
@@ -31,6 +31,9 @@ reviews:
       enabled: true
     actionlint:
       enabled: true
+  finishing_touches:
+    docstrings:
+      enabled: false
 chat:
   auto_reply: true
 knowledge_base:
