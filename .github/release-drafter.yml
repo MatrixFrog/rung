@@ -37,6 +37,10 @@ version-resolver:
   default: patch
 exclude-labels:
   - "skip-changelog"
+exclude-contributors:
+  - "github-actions[bot]"
+commitish: main
+filter-by-commitish: true
 autolabeler:
   - label: "chore"
     title:
