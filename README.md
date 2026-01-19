@@ -4,6 +4,11 @@
 
 # rung
 
+[![Crates.io](https://img.shields.io/crates/v/rung-cli.svg)](https://crates.io/crates/rung-cli)
+[![CI](https://github.com/auswm85/rung/actions/workflows/ci.yml/badge.svg)](https://github.com/auswm85/rung/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![MSRV](https://img.shields.io/badge/MSRV-1.85-orange.svg)](https://www.rust-lang.org)
+
 A Git workflow tool for managing stacked PRs (pull request chains).
 
 ![Demo](https://raw.githubusercontent.com/auswm85/rung/main/assets/demo.gif)
@@ -119,6 +124,7 @@ rung create my-branch -m "feat: add auth"    # Explicit name with commit
 ```
 
 When using `-m`, rung will:
+
 1. Derive the branch name from the message (if not provided explicitly)
 2. Create and checkout the new branch
 3. Stage all changes
