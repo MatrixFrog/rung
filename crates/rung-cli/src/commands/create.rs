@@ -60,7 +60,7 @@ pub fn run(name: Option<&str>, message: Option<&str>, dry_run: bool) -> Result<(
                 output::warn("Working directory is clean - branch would be created without commit");
             } else {
                 if repo.has_staged_changes()? {
-                    output::info(&format!("Would created commit with message: {msg}"));
+                    output::info(&format!("Would create commit with message: {msg}"));
                 } else {
                     output::warn("No staged changes to commit (untracked files may exist)");
                 }
