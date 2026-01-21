@@ -59,11 +59,8 @@ pub fn run(name: Option<&str>, message: Option<&str>, dry_run: bool) -> Result<(
             if repo.is_clean()? {
                 output::warn("Working directory is clean - branch would be created without commit");
             } else {
-                if repo.has_staged_changes()? {
-                    output::info(&format!("Would create commit with message: {msg}"));
-                } else {
-                    output::warn("No staged changes to commit (untracked files may exist)");
-                }
+                // Real path calls stage_all() which stages all changes, so if not clean we'd commit
+                output::info(&format!("Would create commit with message: {msg}"));
             }
         }
     } else {
