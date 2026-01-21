@@ -264,7 +264,8 @@ Displays all branches and highlights the current branch. PR numbers are shown wh
 Show commits on the current branch (commits between parent branch and HEAD). Helps visualize what's in the current stack branch.
 
 ```bash
-rung log
+rung log           # Human-readable output
+rung log --json    # JSON output for tooling
 ```
 
 Example output:
@@ -273,6 +274,50 @@ Example output:
 a1b2c3d    Add user authentication     alice
 e4f5g6h    Fix login redirect          alice
 ```
+
+**Options:**
+
+- `--json` - Output as JSON (includes branch name, parent, and commit details)
+
+### `rung absorb`
+
+Absorb staged changes into the appropriate commits in your stack. This analyzes staged hunks and automatically creates fixup commits targeting the commits that last modified those lines.
+
+```bash
+# Stage some changes first
+git add -p
+
+# Preview what would be absorbed
+rung absorb --dry-run
+
+# Absorb the changes (creates fixup commits)
+# Use --base to specify the base branch if auto-detection fails
+rung absorb --base <base-branch>
+
+# Then apply the fixups with an interactive rebase
+# IMPORTANT: Use the same base branch as the absorb command above
+git rebase -i --autosquash <base-branch>
+```
+
+This is useful when you have small fixes or tweaks that should go into earlier commits in your stack rather than being new commits.
+
+**Options:**
+
+- `--dry-run` - Show what would be absorbed without making changes
+- `-b, --base <branch>` - Base branch to determine rebaseable range (default: auto-detect). The same base should be used when running `git rebase --autosquash`.
+
+**How it works:**
+
+1. Parses your staged diff into hunks
+2. Uses `git blame` to find which commit last modified each hunk's lines
+3. Validates the target commit is in your stack (not already on the base branch)
+4. Creates `fixup!` commits targeting the appropriate commits
+
+**Limitations:**
+
+- New files cannot be absorbed (no blame history)
+- Hunks touching lines from multiple commits cannot be absorbed
+- Only works with commits in the rebaseable range (between base and HEAD)
 
 ### `rung doctor`
 
