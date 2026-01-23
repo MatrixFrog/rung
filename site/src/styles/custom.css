@@ -144,6 +144,12 @@ th {
   font-weight: 600;
 }
 
+/* Mobile menu button - darker bg with light icon in dark mode */
+[data-theme="dark"] starlight-menu-button button {
+  background-color: var(--sl-color-gray-6);
+  color: var(--sl-color-gray-1);
+}
+
 /* Mobile improvements */
 @media (max-width: 768px) {
   .feature-grid {
