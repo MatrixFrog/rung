@@ -6,6 +6,35 @@ use git2::{BranchType, Oid, RepositoryState, Signature};
 
 use crate::error::{Error, Result};
 
+/// Divergence state between a local branch and its tracking remote (upstream, falls back to origin).
+///
+/// This is distinct from `BranchState::Diverged` which tracks divergence from the
+/// *parent branch* (needs sync). `RemoteDivergence` tracks local vs remote (needs push/pull).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RemoteDivergence {
+    /// Local and remote are at the same commit.
+    InSync,
+    /// Local has commits not on remote (safe push).
+    Ahead {
+        /// Number of commits local is ahead of remote.
+        commits: usize,
+    },
+    /// Remote has commits not on local (need pull).
+    Behind {
+        /// Number of commits local is behind remote.
+        commits: usize,
+    },
+    /// Both have unique commits (need force push after rebase).
+    Diverged {
+        /// Number of commits local is ahead of remote.
+        ahead: usize,
+        /// Number of commits local is behind remote.
+        behind: usize,
+    },
+    /// No remote tracking branch exists (first push).
+    NoRemote,
+}
+
 /// High-level wrapper around a git repository.
 pub struct Repository {
     inner: git2::Repository,
@@ -102,18 +131,33 @@ impl Repository {
 
     /// Get the commit ID of a remote branch tip.
     ///
+    /// Uses the configured upstream if set, otherwise falls back to `origin/<branch>`.
+    ///
     /// # Errors
     /// Returns error if branch not found.
     pub fn remote_branch_commit(&self, branch_name: &str) -> Result<Oid> {
-        let ref_name = format!("refs/remotes/origin/{branch_name}");
+        // Try configured upstream first, fall back to origin/<branch>
+        let remote_ref = self
+            .branch_upstream_ref(branch_name)
+            .unwrap_or_else(|| format!("refs/remotes/origin/{branch_name}"));
+
         let reference = self
             .inner
-            .find_reference(&ref_name)
-            .map_err(|_| Error::BranchNotFound(format!("origin/{branch_name}")))?;
+            .find_reference(&remote_ref)
+            .map_err(|_| Error::BranchNotFound(remote_ref.clone()))?;
 
-        reference
-            .target()
-            .ok_or_else(|| Error::BranchNotFound(format!("origin/{branch_name}")))
+        reference.target().ok_or(Error::BranchNotFound(remote_ref))
+    }
+
+    /// Get the configured upstream ref for a branch, if any.
+    ///
+    /// Returns `None` if no upstream is configured or the branch doesn't exist.
+    /// Uses `branch_upstream_name` to read from git config, which works even when
+    /// the remote-tracking ref doesn't exist locally.
+    fn branch_upstream_ref(&self, branch_name: &str) -> Option<String> {
+        let refname = format!("refs/heads/{branch_name}");
+        let upstream_buf = self.inner.branch_upstream_name(&refname).ok()?;
+        upstream_buf.as_str().map(String::from)
     }
 
     /// Create a new branch at the current HEAD.
@@ -536,6 +580,65 @@ impl Repository {
     }
 
     // === Remote operations ===
+
+    /// Check how a local branch relates to its remote counterpart.
+    ///
+    /// Uses the configured upstream if set, otherwise falls back to `origin/<branch>`.
+    /// Compares the local branch tip with the remote tracking branch to determine
+    /// if the local branch is ahead, behind, diverged, or in sync with the remote.
+    ///
+    /// Uses `graph_ahead_behind` for efficient single-traversal computation.
+    ///
+    /// # Errors
+    /// Returns error if branch doesn't exist or git operations fail.
+    pub fn remote_divergence(&self, branch: &str) -> Result<RemoteDivergence> {
+        let local = self.branch_commit(branch)?;
+
+        // Try to get remote - NoRemote if doesn't exist
+        let remote = match self.remote_branch_commit(branch) {
+            Ok(oid) => oid,
+            Err(Error::BranchNotFound(_)) => return Ok(RemoteDivergence::NoRemote),
+            Err(e) => return Err(e),
+        };
+
+        if local == remote {
+            return Ok(RemoteDivergence::InSync);
+        }
+
+        // Use graph_ahead_behind for efficient single-traversal computation.
+        // NotFound means no merge base (unrelated histories) - treat as (0, 0).
+        let (ahead, behind) = match self.inner.graph_ahead_behind(local, remote) {
+            Ok(counts) => counts,
+            Err(e) if e.code() == git2::ErrorCode::NotFound => (0, 0),
+            Err(e) => return Err(Error::Git2(e)),
+        };
+
+        // Unrelated histories: (0, 0) but local != remote. Count all commits on each side.
+        if ahead == 0 && behind == 0 {
+            return Ok(RemoteDivergence::Diverged {
+                ahead: self.count_all_commits(local)?,
+                behind: self.count_all_commits(remote)?,
+            });
+        }
+
+        Ok(match (ahead, behind) {
+            (a, 0) => RemoteDivergence::Ahead { commits: a },
+            (0, b) => RemoteDivergence::Behind { commits: b },
+            (a, b) => RemoteDivergence::Diverged {
+                ahead: a,
+                behind: b,
+            },
+        })
+    }
+
+    /// Count all commits reachable from a given commit.
+    ///
+    /// Used for unrelated histories where there's no merge base.
+    fn count_all_commits(&self, from: Oid) -> Result<usize> {
+        let mut revwalk = self.inner.revwalk()?;
+        revwalk.push(from)?;
+        Ok(revwalk.count())
+    }
 
     /// Get the URL of the origin remote.
     ///

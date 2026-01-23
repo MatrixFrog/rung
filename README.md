@@ -150,6 +150,16 @@ rung status --json       # Output as JSON for tooling
 
 - `--fetch` - Fetch latest PR status from GitHub
 
+**Remote Divergence Indicators:**
+
+The status display shows how local branches compare to their remote counterparts:
+
+- `(2↑)` - Branch is 2 commits ahead of remote (safe to push)
+- `(1↓)` - Branch is 1 commit behind remote (remote has changes)
+- `(2↑ 1↓)` - Branch has diverged (2 ahead, 1 behind) - force push needed
+
+When branches have diverged, a warning is shown with guidance to use `rung submit --force` (which uses `--force-with-lease` for safety).
+
 ### `rung sync`
 
 Sync the stack by rebasing all branches when the base moves forward.
@@ -186,14 +196,14 @@ Push all stack branches and create/update PRs on GitHub. Each PR includes a stac
 rung submit                          # Submit all branches
 rung submit --dry-run                # Preview what would happen without updating anything
 rung submit --draft                  # Create PRs as drafts
-rung submit --force                  # Force push
+rung submit --force                  # Force push (uses --force-with-lease)
 rung submit --title "My PR title"    # Custom title (overrides commit message)
 ```
 
 **Options:**
 
 - `--draft` - Create PRs as drafts
-- `--force` - Force push even if remote has changes
+- `--force` - Force push using `--force-with-lease` for safety, even if remote has changes
 - `-t, --title <title>` - Custom PR title for current branch (overrides commit message)
 
 ### `rung merge`
